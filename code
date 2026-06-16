@@ -1,0 +1,49 @@
+import math
+import random
+import numpy as np
+from abc import ABC, abstractmethod
+
+class Lattice(ABC):
+    @abstractmethod
+    def neighbors(self, coord):
+        pass
+
+    @abstractmethod
+    def in_bounds(self,coord):
+        pass
+
+class Square_Lattice(Lattice):
+    def __init__(self, size):
+        self.number_neighbors = 4
+
+        full_square = math.floor(math.sqrt(size))
+        extra_cells = size - full_square ** 2
+        self.width = self.height = full_square
+        self.extra_top = full_square * (full_square<=extra_cells) + extra_cells* (full_square>extra_cells)
+        self.extra_side = extra_cells - self.extra_top
+
+class Honeycomb(Lattice):
+    def __init__(self, size):
+        self.number_neighbors = 3
+
+        full_comb = math.floor((3+math.sqrt(9-12*(1-size)))/6)
+        extra_cells = size - (3*full_comb**2 - 3*full_comb +1)
+        self.width = self.height = full_comb
+
+
+class SAW:
+    def __init__(self, lattice, start): #ik wete niet of dit zo werkt met de latice importen:
+        self.lattice = lattice
+        self.path = [start]
+        self.visted = set(start) #sla hier alle bezochte cells op
+
+    def random_step(self, num_neigbors, coord): #num nieghbors moet hier vanuit lattice komen:
+        i = random.randint(0,num_neigbors-1)
+        pass
+
+
+    def backtrack(self):
+        pass
+
+
+
