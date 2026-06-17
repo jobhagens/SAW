@@ -3,47 +3,86 @@ import random
 import numpy as np
 from abc import ABC, abstractmethod
 
-class Lattice(ABC): #blueprint voor alle andere Lattices
+
+class Lattice(ABC): #kind of the blueprint
+    def __init__(self, size: int, dimension: int, neighbors:int):
+        self.size = size
+        self.dimension = dimension
+        self.num_neighbors = neighbors
+
     @abstractmethod
-    def neighbors(self, coord):
+    def get_neighbors(self, position: tuple) -> list[tuple]: #Return all possible neighbor positions from current position.
         pass
 
     @abstractmethod
-    def in_bounds(self,coord):
+    def get_possible_steps(self) -> list[tuple]: #Return all valid step vectors
         pass
+
+    def is_valid_position(self, position: tuple) -> bool: #set True as basis and change once we implement bounds
+        return True  #start with boundless
 
 class Square_Lattice(Lattice):
-    def __init__(self, size):
-        self.number_neighbors = 4
-
+    def __init__(self, size:int):
+        super().__init__(size, dimension=2, neighbors =4)
+        self.possible_steps = [
+            (1,0),
+            (-1,0),
+            (0,1),
+            (0,-1)
+        ]
         full_square = math.floor(math.sqrt(size))
-        extra_cells = size - full_square ** 2
+        # extra_cells = size - full_square ** 2
         self.width = self.height = full_square
-        self.extra_top = full_square * (full_square<=extra_cells) + extra_cells* (full_square>extra_cells)
-        self.extra_side = extra_cells - self.extra_top #deze is inclusief het (rechtsboven) hoekje indien aanwezig)
+        # self.extra_top = full_square * (full_square<=extra_cells) + extra_cells* (full_square>extra_cells)
+        # self.extra_side = extra_cells - self.extra_top
 
-class Honeycomb(Lattice):
-    def __init__(self, size):
-        self.number_neighbors = 3
+    def get_possible_steps(self):
+        return self.possible_steps
 
-        full_comb = math.floor((3+math.sqrt(9-12*(1-size)))/6) #geeft aan hoe veel lagen hexagons
-        extra_cells = size - (3*full_comb**2 - 3*full_comb +1)
-        self.width = self.height = full_comb
-        #de overige (extra) kon ik niet zo 123 iets vinden om te verdelen/splitsen.
+    def get_neighbors(self, position):
+        x, y = position
+        return [(x + dx, y + dy) for dx, dy in self.possible_steps] #implementeer later nog de check voor of ie in bounds is
 
-class SAW: #het ding dat de keuzes maakt van waarnaartoe
-    def __init__(self, lattice, start): #ik wete niet of dit zo werkt met de latice hier naartoe krijgen:
-        self.lattice = lattice
-        self.path = [start]
-        self.visted = set(start) #set is O(1) en alle coordinaten zijn toch verschillend
-
-    def random_step(self, num_neigbors, coord): #num nieghbors moet hier vanuit lattice komen:
-        i = random.randint(0,num_neigbors-1)
-        pass
+# class Honeycomb(Lattice):
+#     def __init__(self, size):
+#         self.number_neighbors = 3
+#
+#         full_comb = math.floor((3+math.sqrt(9-12*(1-size)))/6)
+#         extra_cells = size - (3*full_comb**2 - 3*full_comb +1)
+#         self.width = self.height = full_comb
 
 
-    def backtrack(self): #implementeer zodra we eerste werkende versie hebben zonder
-        pass
+class Self_Avoiding_Walk:
+    def __init__(self, lattice: Lattice, origin:tuple):
+        self.lattice = lattice  # kies de latice die je wil
+        self.origin = origin
+        self.path: list[tuple] = [] #houd bij wat het pad is
+        self.visited: set = set() #eigenlijk weer het pad, maar dan allen de unieke waardes in set omdat O(1)
+        self.reset(origin)
+
+    def reset(self, new_start:tuple):
+        self.origin = new_start
+        self.path = [new_start]
+        self.visited = {new_start}
+
+    def step(self):
+        current = self.path[-1]
+        neighbors = self.lattice.get_neighbors(current)
+        free_nodes = [node for node in neighbors if node not in self.visited]
+        if not free_nodes: #end walk if no possible nodes (and use for backtracking later)
+            return False
+
+        chosen = random.choice(free_nodes)
+        self.path.append(chosen)
+        self.visited.add(chosen)
+        return True
+
+    def run(self, max_steps: int):#the running itself for N steps
+        self.reset(self.origin)
+        for steps in range(max_steps):
+            if not self.step():
+                break #of later backtrack
+        return self.path
 
 
 
