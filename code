@@ -3,6 +3,7 @@ import random
 # import numpy as np
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt #al dit een error geeft ff in je terminal 'pip install matplotlib'
+from mpl_toolkits.mplot3d import Axes3D
 
 
 class Lattice(ABC):  # kind of the blueprint
@@ -25,17 +26,18 @@ class Lattice(ABC):  # kind of the blueprint
 
 
 class Square_Lattice(Lattice):
-    def __init__(self, size: int):
-        super().__init__(size, dimension=2, neighbors=4)
-        self.possible_steps = [
-            (1, 0),
-            (-1, 0),
-            (0, 1),
-            (0, -1)
-        ]
-        full_square = math.floor(math.sqrt(size))
+    def __init__(self, size: int, neighbors: int):
+        super().__init__(size, dimension=int(neighbors/2), neighbors=neighbors)
+        self.possible_steps = []
+        for i in range(self.dimension):
+            for val in [1, -1]:
+                step = [0] * self.dimension
+                step[i] = val
+                self.possible_steps.append(tuple(step))
+
+        full_square = math.floor(size**(1/self.dimension))
         # extra_cells = size - full_square ** 2
-        self.width = self.height = full_square
+        self.bounds = [full_square] * self.dimension
         # self.extra_top = full_square * (full_square<=extra_cells) + extra_cells* (full_square>extra_cells)
         # self.extra_side = extra_cells - self.extra_top
 
@@ -44,27 +46,59 @@ class Square_Lattice(Lattice):
         return self.possible_steps
 
     def in_bounds(self, position: tuple):
-        x, y = position
-        if 0 <= x <= self.width and 0 <= y <= self.height:
-            return True
-        else:
-            return False
+        for i in range (self.dimension):
+            if 0 > position[i] or self.bounds[i] < position[i]:
+                return False
+        return True
 
     def get_neighbors(self, position: tuple):
-        x, y = position
-        return [(x + dx, y + dy) for dx, dy in self.possible_steps if
-                self.in_bounds((x + dx, y + dy))]  # vanaf if check of het in de grid zit
+        all_neighbors = []
+        for option in self.possible_steps: #voor elke mogelijke stap moet er een neighbor worden gereturned
+            step = [] #nodig om 1 neighbor te maken omdat optellen van tuples niet handig gaat
+            for i in range(self.dimension): #elk i'de element van de positie en de stap bij elkaar optellen
+                step.append(position[i]+option[i])
+            step = tuple(step) #nodig om goed te werken met andere functies
+            if self.in_bounds(step):
+                all_neighbors.append(step)
+        return all_neighbors
 
-    def visualise(self, walk: list[tuple], debug: set[tuple]):
-        x = [x[0] for x in walk]
-        y = [y[1] for y in walk]
-        plt.xlim(-0.25, self.width+0.25)
-        plt.ylim(-0.25, self.width+0.25)
-        plt.plot(x, y, color = 'red')
-        plt.grid(which = 'both', alpha = 0.5)
-        x2 = [x[0] for x in debug]
-        y2 = [y[1] for y in debug]
-        plt.scatter(x2, y2, color = 'blue')
+    def visualise_R2(self, walk: list[tuple]):
+        x = [p[0] for p in walk]#split tuples up zodat we het kunnen plotten
+        y = [p[1] for p in walk]
+        plt.plot(x, y, color='red')  # de walk maken
+
+        x_bound = self.bounds[0]
+        y_bound = self.bounds[1]
+        plt.xlim(-0.25, x_bound+0.25)#grid maken tot alle mogelijke waardes van x en y
+        plt.ylim(-0.25, y_bound+0.25)
+
+        plt.xticks(range(x_bound+1))#zorgen dat op elke integer een gridlijn staat
+        plt.yticks(range(y_bound+1))
+        plt.grid(which = "both", alpha = 0.5)
+
+        plt.show()
+
+    def visualise_R3(self, walk: list[tuple]):
+        x = [p[0] for p in walk]
+        y = [p[1] for p in walk]
+        z = [p[2] for p in walk]
+
+        fig = plt.figure() #canvas maken
+        ax = fig.add_subplot(111, projection='3d') #subplot toevoegen van 1 rij en 1 kolom
+        ax.plot(x, y,z, color='red', linewidth = 1.5, alpha = 0.2)  #(dikke en transparante) walk maken
+
+        x_bound = self.bounds[0]
+        y_bound = self.bounds[1]
+        z_bound = self.bounds[2]
+        ax.set_xlim(-0.25, x_bound+0.25)#grid maken tot alle mogelijke waardes van x en y
+        ax.set_ylim(-0.25, y_bound+0.25)
+        ax.set_zlim(-0.25, z_bound + 0.25)
+
+        ax.set_xticks(range(x_bound+1))#zorgen dat op elke integer een gridlijn staat
+        ax.set_yticks(range(y_bound+1))
+        ax.set_zticks(range(z_bound + 1))
+        ax.grid(which = "both", alpha = 0.25) #in 3d waren ze veel prominenter dus maak ze minder licht
+
         plt.show()
 
 # class Honeycomb(Lattice):
@@ -123,9 +157,9 @@ class Self_Avoiding_Walk:
             self.step()
         return self.path
 
-square = Square_Lattice(size=36)
-walk = Self_Avoiding_Walk(lattice=square, origin=(0,0))
-print(walk.walk(35))
+square = Square_Lattice(size=1000, neighbors=6)
+walk = Self_Avoiding_Walk(lattice=square, origin=(2,2,2))
+print(walk.walk(300))
 print(len(walk.visited))
-print()
-square.visualise(walk.path, walk.temp_unavailable)
+print(square.bounds)
+square.visualise_R3(walk.path)
