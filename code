@@ -197,6 +197,13 @@ class Self_Avoiding_Walk:
             return self.path
         return [self.origin]# return simply a path containing only the origin if no path is found. Avoids error messages
 
+    def average_length(self, length_walk, N):
+        total_distance = 0
+        for i in range(N):
+            end_point = self.generate(length_walk)[-1]
+            total_distance += math.sqrt((end_point[0]-self.origin[0])**2+(end_point[1]-self.origin[1])**2)
+        return round(total_distance/N, 2)
+
 #
 # square = Square_Lattice(size=36, neighbors=4)
 # walk = Self_Avoiding_Walk(lattice=square, origin=(0, 0, 0))
