@@ -1,9 +1,9 @@
 # User Manual: Self-Avoiding Walk (SAW) Simulator
 
 ## Scope
-This manual is aimed at students, researchers, and developers using this simulation codebase to study polymer physics, path-finding algorithms, or lattice geometries. 
+This manual is aimed at our Proffesor(s assinstants) but is free to be used by anyone who likes.
 
-The following documentation focuses purely on how to execute, configure, and analyze simulations. If you would like to contribute to the core geometric engine, please refer to the inner-code documentation.
+The documentation focuses on how to create and customize SAW's.
 
 ---
 
