@@ -112,10 +112,10 @@ class Square_Lattice(Lattice):
 
 class Self_Avoiding_Walk:
     def __init__(self, lattice: Lattice, origin: tuple):
-        self.lattice = lattice  # kies de latice die je wil
+        self.lattice = lattice  # attach walk to lattice
         self.origin = origin
-        self.path: list[tuple] = []  # houd bij wat het pad is
-        self.visited: set = set()  # eigenlijk weer het pad, maar dan allen de unieke waardes in set omdat O(1)
+        self.path: list[tuple] = []  #keep track of the path
+        self.visited: set = set()  #used to store visited nodes
         self.reset(origin)
         self.temp_unavailable :set = set()
 
@@ -123,43 +123,45 @@ class Self_Avoiding_Walk:
         self.origin = new_start
         self.path = [new_start]
         self.visited = {new_start}
-
-    def backtrack(self):
-        dead_end = self.path.pop()
-        self.visited.remove(dead_end)
-        self.temp_unavailable.add(dead_end)
-        neighbors = self.lattice.get_neighbors(self.path[-1])
-
-        free_nodes = [node for node in neighbors if node not in self.visited and node not in self.temp_unavailable]
-        if free_nodes:
-            chosen = random.choice(free_nodes)
-            self.path.append(chosen)
-            self.visited.add(chosen)
-        else:
-            self.backtrack()
-
-    def step(self):
+    
+    def backtrack(self, max_steps: int):
+        #guard clause to check if desired length of walk is reached
+        #note: N + 1 because origin is included in path
+        if len(self.path) == max_steps + 1:
+            return True
+        
         current = self.path[-1]
-        neighbors = self.lattice.get_neighbors(current)
-        free_nodes = [node for node in neighbors if node not in self.visited]
-        if not free_nodes:  # end walk if no possible nodes (and use for backtracking later)
-            self.backtrack()
-            return False
+        neighbors_options = [node for node in self.lattice.get_neighbors(current) if node not in self.visited]
+        
+        #create randomness in neighbour choosing, but allow for iterative structure for the recursive backtracking
+        random.shuffle(neighbors_options)
 
-        chosen = random.choice(free_nodes)
-        self.path.append(chosen)
-        self.visited.add(chosen)
-        return True
+        for chosen_neighbor in neighbors_options:
+            self.path.append(chosen_neighbor)
+            self.visited.add(chosen_neighbor)
 
-    def walk(self, max_steps: int):  # the running itself for N steps
+            if self.backtrack(max_steps):
+                return True
+            
+            self.visited.remove(chosen_neighbor)
+            self.path.pop()
+
+        return False
+
+
+    def generate(self, max_steps: int):  # the running itself for N steps
         self.reset(self.origin)
-        while len(self.visited) < max_steps+1:
-            self.step()
-        return self.path
+        
+        succesful_backtrack = self.backtrack(max_steps)
+
+        if succesful_backtrack:
+            return self.path
+        #return simply a path containing only the origin if no path is found
+        return [self.origin]
 
 square = Square_Lattice(size=1000, neighbors=6)
-walk = Self_Avoiding_Walk(lattice=square, origin=(2,2,2))
-print(walk.walk(300))
+walk = Self_Avoiding_Walk(lattice=square, origin=(0,0,0))
+print(walk.generate(300))
 print(len(walk.visited))
 print(square.bounds)
 square.visualise_R3(walk.path)
