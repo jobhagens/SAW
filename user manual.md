@@ -63,7 +63,7 @@ A standard grif of dimension n, just like $\mathbb{N}^n$ with 90 degree angles.
 ### 2. Hexagonal Grids (`Honeycomb_Lattice`)
 A honeycomb patern in 2d. Note that this has 3 possible move directions (excluding the negative version) so will be treated as 3 dimensional in the code.
 
-Here again: the number of cells will be rounded down to make sure only full 'layers' will be created.
+Here again: the number of cells will be rounded down to make sure only full 'layers' will be created. A grid with n 'layers' will have size 3n^2 - 3n +1
 
 The inteded (2d) directions of the base vectors are ,
 
