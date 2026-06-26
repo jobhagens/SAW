@@ -187,7 +187,7 @@ class Self_Avoiding_Walk:
             self.visited.add(chosen_neighbor)
             self.parity = not self.parity  # switch parity, used for hexagonal lattice
 
-            if self.walk(max_steps):  # recursively call the backtracking walk method
+            if self.walk(max_nodes):  # recursively call the backtracking walk method
                 return True
 
             # remove last node from path, since self.walk(max_steps) didn't return true. Then start the process over again
