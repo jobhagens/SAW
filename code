@@ -208,4 +208,4 @@ class Self_Avoiding_Walk:
         for i in range(iterations):
             end_point = self.generate(length_walk)[-1]
             total_distance += math.sqrt((end_point[0]-self.origin[0])**2+(end_point[1]-self.origin[1])**2)
-        return round(total_distance/N, 2)
+        return round(total_distance/iterations, 2)
