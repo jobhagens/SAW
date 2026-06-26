@@ -169,39 +169,39 @@ class Self_Avoiding_Walk:
         self.path = [new_start]
         self.visited = {new_start}
 
-    def walk(self, max_steps: int):
+    def walk(self, max_nodes: int):
         # guard clause to check if desired length of walk is reached
         # note: N + 1 because origin is included in path
-        if len(self.path) == max_steps + 1:
+        if len(self.path) == max_nodes:
             return True
 
         current = self.path[-1]
-        neighbors_options = [node for node in self.lattice.get_neighbors(current, self.parity) if node not in self.visited]
+        neighbors_options = [node for node in self.lattice.get_neighbors(current, self.parity) if
+                             node not in self.visited]
 
         # create randomness in neighbour choosing, but allow for iterative structure for the recursive backtracking
         random.shuffle(neighbors_options)
 
-
-        for chosen_neighbor in neighbors_options: 
+        for chosen_neighbor in neighbors_options:
             self.path.append(chosen_neighbor)
             self.visited.add(chosen_neighbor)
-            self.parity = not self.parity #switch parity, used for hexagonal lattice
+            self.parity = not self.parity  # switch parity, used for hexagonal lattice
 
-            if self.walk(max_steps): #recursively call the backtracking walk method
+            if self.walk(max_steps):  # recursively call the backtracking walk method
                 return True
 
-            #remove last node from path, since self.walk(max_steps) didn't return true. Then start the process over again
+            # remove last node from path, since self.walk(max_steps) didn't return true. Then start the process over again
             self.visited.remove(chosen_neighbor)
             self.path.pop()
             self.parity = not self.parity  # switch back the parity
 
         return False
 
-    def generate(self, max_steps: int):  #generate a random walk of length max_steps
+    def generate(self, max_nodes: int):  # generate a random walk of length max_steps
         self.reset(self.origin)
-        if self.walk(max_steps):
+        if self.walk(max_nodes = max_nodes):
             return self.path
-        return [self.origin]# simply return a path containing only the origin if no path is found. Avoids error messages
+        return [self.origin]  # return simply a path containing only the origin if no path is found. Avoids error messages
 
     def average_length(self, length_walk, iterations):
         total_distance = 0
