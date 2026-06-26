@@ -89,7 +89,7 @@ The code is written so that (0,0,0) is seen as the most bottomleft hex, which is
 Once your environment is built, use the `Self_Avoiding_Walk` Class to create a walk.
 
 ### Executing a Single Walk
-Initialize the walk by pairing it with your grid and setting an `origin` of your choice. 
+Initialize the walk by pairing it with your grid and setting an `origin` of your choice. It is highly recommended to pick an origin not too close to the border, as this will greatly worsen runtime do tue more backtracking (a costly algorithm).
 
 The origin should be a tuple consisting of n integers, the same as the dimension of your grid. Also make sure the coordinates of the origin are inside the boundries of the grid, or no walk will be generated. 
 
@@ -161,7 +161,7 @@ ax.grid(which="both", alpha=0.25, axis="x")
 grid = Orthogonal_Lattice(size=125, neighbors=6)
 
 # 2. Attach simulation engine
-sim = Self_Avoiding_Walk(lattice=grid, origin=(0, 0, 0))
+sim = Self_Avoiding_Walk(lattice=grid, origin=(3, 3, 3))
 
 # 3. Generate and visualize path
 path = sim.generate(max_steps=25)
