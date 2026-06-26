@@ -27,6 +27,7 @@ class Lattice(ABC):
 
 class Orthogonal_Lattice(Lattice):
     def __init__(self, size: int, neighbors: int):
+        self.neighbors = neighbors - neighbors%2
         super().__init__(size, dimension=int(neighbors/2), neighbors=neighbors)
         self.possible_steps = []
         for i in range(self.dimension):
