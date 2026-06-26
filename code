@@ -118,10 +118,15 @@ class Honeycomb_Lattice(Lattice):
         self.layers = math.floor((3 + math.sqrt(9 - 12 * (1 - size))) / 6)
         #extra_cells = size - (3 * self.layers ** 2 - 3 * self.layers + 1)
 
-    def in_bounds(self, position: tuple):
+    def in_bounds(self, position: tuple):  # (0,0,0) is at the bottom left
         for i in range(self.dimension):
-            if 1-self.layers > position[i] or self.layers < position[i]: #als je origin als (0,0,0) ziet dan kan het max 1-anatal lagen stappen naar links(-onder) of rechtsonder
-                return False
+            if i == 2:
+                if not (-(self.layers - 1) <= position[
+                    i] <= self.layers):  # voor 3e basisvector is t raar omdat we linksonder starten kan die nog bede kanten op
+                    return False
+            else:
+                if not (0 <= position[i] <= 2 * self.layers - 1):
+                    return False
         return True
 
     def get_neighbors(self, position: tuple, parity: bool) -> list[tuple]:
@@ -136,15 +141,15 @@ class Honeycomb_Lattice(Lattice):
                     index = 4 + parity
             
             #adding tuples does not correspond to adding them as vectors. The following code solves this issue
-            option = self.possible_steps[index]
-            step = []  
+            step = self.possible_steps[index]
+            neighbor = []  
             for j in range(self.dimension): 
-                step.append(position[j] + option[j])
+                neighbor.append(position[j] + step[j])
             step = tuple(step)
 
             #boundary check
-            if self.in_bounds(step): 
-                all_neighbors.append(step)
+            if self.in_bounds(neighbor): 
+                all_neighbors.append(neighbor)
         return all_neighbors
 
 
@@ -195,23 +200,11 @@ class Self_Avoiding_Walk:
         self.reset(self.origin)
         if self.walk(max_steps):
             return self.path
-        return [self.origin]# return simply a path containing only the origin if no path is found. Avoids error messages
+        return [self.origin]# simply return a path containing only the origin if no path is found. Avoids error messages
 
-    def average_length(self, length_walk, N):
+    def average_length(self, length_walk, iterations):
         total_distance = 0
-        for i in range(N):
+        for i in range(iterations):
             end_point = self.generate(length_walk)[-1]
             total_distance += math.sqrt((end_point[0]-self.origin[0])**2+(end_point[1]-self.origin[1])**2)
         return round(total_distance/N, 2)
-
-#
-# square = Square_Lattice(size=36, neighbors=4)
-# walk = Self_Avoiding_Walk(lattice=square, origin=(0, 0, 0))
-# print(walk.generate(30))
-# print(len(walk.visited))
-# print(square.bounds)
-# square.visualise_R2(walk.path)
-hex = Honeycomb_Lattice(1)
-print(hex.possible_steps)
-walk = Self_Avoiding_Walk(lattice=hex, origin=(0, 0, 0))
-print(walk.generate(3))
