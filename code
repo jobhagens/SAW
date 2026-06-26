@@ -146,7 +146,7 @@ class Honeycomb_Lattice(Lattice):
             neighbor = []  
             for j in range(self.dimension): 
                 neighbor.append(position[j] + step[j])
-            step = tuple(step)
+            neighbor = tuple(neighbor)
 
             #boundary check
             if self.in_bounds(neighbor): 
@@ -209,3 +209,13 @@ class Self_Avoiding_Walk:
             end_point = self.generate(length_walk)[-1]
             total_distance += math.sqrt((end_point[0]-self.origin[0])**2+(end_point[1]-self.origin[1])**2)
         return round(total_distance/iterations, 2)
+
+'''some pre written test cases
+square = Orthogonal_Lattice(size=100, neighbors=4)
+walk = Self_Avoiding_Walk(lattice=square, origin=(5, 5))
+print("square walk ", walk.generate(30))
+square.visualise_R2(walk.path)
+
+hex = Honeycomb_Lattice(7)
+walk = Self_Avoiding_Walk(lattice=hex, origin=(1, 1, 1))
+print("honneycomb walk ",walk.generate(15))'''
