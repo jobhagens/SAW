@@ -3,7 +3,6 @@ import random
 # import numpy as np
 from abc import ABC, abstractmethod
 import matplotlib.pyplot as plt #al dit een error geeft ff in je terminal 'pip install matplotlib'
-from mpl_toolkits.mplot3d import Axes3D
 
 
 class Lattice(ABC):  # kind of the blueprint
@@ -13,16 +12,13 @@ class Lattice(ABC):  # kind of the blueprint
         self.num_neighbors = neighbors
 
     @abstractmethod
-    def get_neighbors(self, position: tuple) -> list[
+    def get_neighbors(self, position: tuple, parity:bool) -> list[
         tuple]:  # Return all possible neighbor positions from current position.
         pass
 
     @abstractmethod
     def get_possible_steps(self) -> list[tuple]:  # Return all valid step vectors
         pass
-
-    def is_valid_position(self, position: tuple) -> bool:  # set True as basis and change once we implement bounds
-        return True  # start with boundless
 
 
 class Square_Lattice(Lattice):
@@ -41,7 +37,6 @@ class Square_Lattice(Lattice):
         # self.extra_top = full_square * (full_square<=extra_cells) + extra_cells* (full_square>extra_cells)
         # self.extra_side = extra_cells - self.extra_top
 
-
     def get_possible_steps(self):
         return self.possible_steps
 
@@ -51,7 +46,7 @@ class Square_Lattice(Lattice):
                 return False
         return True
 
-    def get_neighbors(self, position: tuple):
+    def get_neighbors(self, position: tuple, parity:bool = None):
         all_neighbors = []
         for option in self.possible_steps: #voor elke mogelijke stap moet er een neighbor worden gereturned
             step = [] #nodig om 1 neighbor te maken omdat optellen van tuples niet handig gaat
@@ -101,67 +96,103 @@ class Square_Lattice(Lattice):
 
         plt.show()
 
-# class Honeycomb(Lattice):
-#     def __init__(self, size):
-#         self.number_neighbors = 3
-#
-#         full_comb = math.floor((3+math.sqrt(9-12*(1-size)))/6)
-#         extra_cells = size - (3*full_comb**2 - 3*full_comb +1)
-#         self.width = self.height = full_comb
+class Honeycomb(Lattice):
+    def __init__(self, size: int):
+        super().__init__(size, dimension=3, neighbors=3)
+        self.possible_steps = []
+        for i in range(self.dimension):
+            for val in [1, -1]:
+                step = [0] * self.dimension
+                step[i] = val
+                self.possible_steps.append(tuple(step))
+
+        self.layers = math.floor((3 + math.sqrt(9 - 12 * (1 - size))) / 6)
+        extra_cells = size - (3 * self.layers ** 2 - 3 * self.layers + 1)
+
+    def get_possible_steps(self):
+        return self.possible_steps
+
+    def in_bounds(self, position: tuple):
+        for i in range(self.dimension):
+            if 1-self.layers > position[i] or self.layers < position[i]: #als je origin als (0,0,0) ziet dan kan het max 1-anatal lagen stappen naar links(-onder) of rechtsonder
+                return False
+        return True
+
+    def get_neighbors(self, position: tuple, parity: bool) -> list[tuple]:
+        all_neighbors = []
+        for i in range(3): #3 mogelijke stappen
+            match i:   #verschilende parities hebben verschillende opties (op parity = False [(1,0,0), (0,-1,0), (0,0,1)])
+                case 0:
+                    index = parity
+                case 1:
+                    index = 3-parity
+                case 2:
+                    index = 4 + parity
+            option = self.possible_steps[index]
+            step = []  # nodig om 1 neighbor te maken omdat optellen van tuples niet handig gaat
+            for j in range(self.dimension):  # elk j'de element van de positie en de stap bij elkaar optellen
+                step.append(position[j] + option[j])
+            step = tuple(step)
+            if self.in_bounds(step): #als de optie in de grenzen zit, dan toevoegen
+                all_neighbors.append(step)
+        return all_neighbors
 
 
 class Self_Avoiding_Walk:
     def __init__(self, lattice: Lattice, origin: tuple):
         self.lattice = lattice  # attach walk to lattice
         self.origin = origin
-        self.path: list[tuple] = []  #keep track of the path
-        self.visited: set = set()  #used to store visited nodes
+        self.path: list[tuple] = []  # keep track of the path
+        self.visited: set = set()  # used to store visited nodes
         self.reset(origin)
-        self.temp_unavailable :set = set()
+        self.temp_unavailable: set = set()
+        self.parity = False #nodig voor honeycomb om te bepalen op wat voor type node je staat
 
     def reset(self, new_start: tuple):
         self.origin = new_start
         self.path = [new_start]
         self.visited = {new_start}
-    
-    def backtrack(self, max_steps: int):
-        #guard clause to check if desired length of walk is reached
-        #note: N + 1 because origin is included in path
+
+    def walk(self, max_steps: int):
+        # guard clause to check if desired length of walk is reached
+        # note: N + 1 because origin is included in path
         if len(self.path) == max_steps + 1:
             return True
-        
+
         current = self.path[-1]
-        neighbors_options = [node for node in self.lattice.get_neighbors(current) if node not in self.visited]
-        
-        #create randomness in neighbour choosing, but allow for iterative structure for the recursive backtracking
+        neighbors_options = [node for node in self.lattice.get_neighbors(current, self.parity) if node not in self.visited]
+
+        # create randomness in neighbour choosing, but allow for iterative structure for the recursive backtracking
         random.shuffle(neighbors_options)
 
-        for chosen_neighbor in neighbors_options:
+        for chosen_neighbor in neighbors_options: #alle opties doorlopen voor als je vastloopt op 1 optie en je moet backtracken
             self.path.append(chosen_neighbor)
             self.visited.add(chosen_neighbor)
+            self.parity = not self.parity #switch de parity als je een stap vooruit doet
 
-            if self.backtrack(max_steps):
+            if self.walk(max_steps): #een stap vooruit nemen als het kan en anders laatste element weghalen en vanaf het laatste 'keuzepunt' de volgende optie nemen
                 return True
-            
+
             self.visited.remove(chosen_neighbor)
             self.path.pop()
+            self.parity = not self.parity  # switch de parity als je een stap achteruit doet
 
         return False
 
-
     def generate(self, max_steps: int):  # the running itself for N steps
         self.reset(self.origin)
-        
-        succesful_backtrack = self.backtrack(max_steps)
-
-        if succesful_backtrack:
+        if self.walk(max_steps):
             return self.path
-        #return simply a path containing only the origin if no path is found
-        return [self.origin]
+        return [self.origin]# return simply a path containing only the origin if no path is found
 
-square = Square_Lattice(size=1000, neighbors=6)
-walk = Self_Avoiding_Walk(lattice=square, origin=(0,0,0))
-print(walk.generate(300))
-print(len(walk.visited))
-print(square.bounds)
-square.visualise_R3(walk.path)
+#
+# square = Square_Lattice(size=36, neighbors=4)
+# walk = Self_Avoiding_Walk(lattice=square, origin=(0, 0, 0))
+# print(walk.generate(30))
+# print(len(walk.visited))
+# print(square.bounds)
+# square.visualise_R2(walk.path)
+hex = Honeycomb(1)
+print(hex.possible_steps)
+walk = Self_Avoiding_Walk(lattice=hex, origin=(0, 0, 0))
+print(walk.generate(3))
