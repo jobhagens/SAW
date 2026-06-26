@@ -2,10 +2,13 @@ import math
 import random
 # import numpy as np
 from abc import ABC, abstractmethod
-import matplotlib.pyplot as plt #al dit een error geeft ff in je terminal 'pip install matplotlib'
+
+#IMPORTANT: make sure pip is correctly installed on device
+#then in the command terminal use 'pip install matplotlib' to intall the library
+import matplotlib.pyplot as plt
 
 
-class Lattice(ABC):  # kind of the blueprint
+class Lattice(ABC):
     def __init__(self, size: int, dimension: int, neighbors: int):
         self.size = size
         self.dimension = dimension
@@ -15,13 +18,14 @@ class Lattice(ABC):  # kind of the blueprint
     def get_neighbors(self, position: tuple, parity:bool) -> list[
         tuple]:  # Return all possible neighbor positions from current position.
         pass
-
+    
     @abstractmethod
-    def get_possible_steps(self) -> list[tuple]:  # Return all valid step vectors
+    def in_bounds(self, position: tuple):
+        # handles boundary checking of the lattice
         pass
 
 
-class Square_Lattice(Lattice):
+class Orthogonal_Lattice(Lattice):
     def __init__(self, size: int, neighbors: int):
         super().__init__(size, dimension=int(neighbors/2), neighbors=neighbors)
         self.possible_steps = []
@@ -32,13 +36,8 @@ class Square_Lattice(Lattice):
                 self.possible_steps.append(tuple(step))
 
         full_square = math.floor(size**(1/self.dimension))
-        # extra_cells = size - full_square ** 2
         self.bounds = [full_square] * self.dimension
-        # self.extra_top = full_square * (full_square<=extra_cells) + extra_cells* (full_square>extra_cells)
-        # self.extra_side = extra_cells - self.extra_top
 
-    def get_possible_steps(self):
-        return self.possible_steps
 
     def in_bounds(self, position: tuple):
         for i in range (self.dimension):
@@ -46,28 +45,34 @@ class Square_Lattice(Lattice):
                 return False
         return True
 
-    def get_neighbors(self, position: tuple, parity:bool = None):
+    def get_neighbors(self, position: tuple, parity:bool = False):
         all_neighbors = []
-        for option in self.possible_steps: #voor elke mogelijke stap moet er een neighbor worden gereturned
-            step = [] #nodig om 1 neighbor te maken omdat optellen van tuples niet handig gaat
-            for i in range(self.dimension): #elk i'de element van de positie en de stap bij elkaar optellen
+
+        #adding tuples does not correspond to adding them as vectors. The following code solves this issue
+        for option in self.possible_steps:
+            step = [] 
+            for i in range(self.dimension): 
                 step.append(position[i]+option[i])
-            step = tuple(step) #nodig om goed te werken met andere functies
+            step = tuple(step) #convert list back to tuple
             if self.in_bounds(step):
                 all_neighbors.append(step)
         return all_neighbors
 
     def visualise_R2(self, walk: list[tuple]):
-        x = [p[0] for p in walk]#split tuples up zodat we het kunnen plotten
+        #split tuples to x and y coordinate lists
+        x = [p[0] for p in walk]
         y = [p[1] for p in walk]
-        plt.plot(x, y, color='red')  # de walk maken
-
+        
+        plt.plot(x, y, color='red')
         x_bound = self.bounds[0]
         y_bound = self.bounds[1]
-        plt.xlim(-0.25, x_bound+0.25)#grid maken tot alle mogelijke waardes van x en y
+
+        #plotting grid
+        plt.xlim(-0.25, x_bound+0.25)
         plt.ylim(-0.25, y_bound+0.25)
 
-        plt.xticks(range(x_bound+1))#zorgen dat op elke integer een gridlijn staat
+        #plotting grid lines
+        plt.xticks(range(x_bound+1))
         plt.yticks(range(y_bound+1))
         plt.grid(which = "both", alpha = 0.5)
 
@@ -77,26 +82,30 @@ class Square_Lattice(Lattice):
         x = [p[0] for p in walk]
         y = [p[1] for p in walk]
         z = [p[2] for p in walk]
-
-        fig = plt.figure() #canvas maken
-        ax = fig.add_subplot(111, projection='3d') #subplot toevoegen van 1 rij en 1 kolom
-        ax.plot(x, y,z, color='red', linewidth = 1.5, alpha = 0.2)  #(dikke en transparante) walk maken
-
+        
+        #create canvas
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d') #adds subplot of one row and column
+        ax.plot(x, y,z, color='red', linewidth = 1.5, alpha = 0.2) 
+    
         x_bound = self.bounds[0]
         y_bound = self.bounds[1]
         z_bound = self.bounds[2]
-        ax.set_xlim(-0.25, x_bound+0.25)#grid maken tot alle mogelijke waardes van x en y
-        ax.set_ylim(-0.25, y_bound+0.25)
-        ax.set_zlim(-0.25, z_bound + 0.25)
 
-        ax.set_xticks(range(x_bound+1))#zorgen dat op elke integer een gridlijn staat
-        ax.set_yticks(range(y_bound+1))
+        #plotting grid
+        ax.set_xlim(-0.25, x_bound + 0.25)
+        ax.set_ylim(-0.25, y_bound + 0.25)
+        ax.set_zlim(-0.25, z_bound + 0.25)
+        #plotting grid lines
+        ax.set_xticks(range(x_bound + 1))
+        ax.set_yticks(range(y_bound + 1))
         ax.set_zticks(range(z_bound + 1))
-        ax.grid(which = "both", alpha = 0.25) #in 3d waren ze veel prominenter dus maak ze minder licht
+        #adjust axis transparancy
+        ax.grid(which = "both", alpha = 0.25) 
 
         plt.show()
 
-class Honeycomb(Lattice):
+class Honeycomb_Lattice(Lattice):
     def __init__(self, size: int):
         super().__init__(size, dimension=3, neighbors=3)
         self.possible_steps = []
@@ -107,10 +116,7 @@ class Honeycomb(Lattice):
                 self.possible_steps.append(tuple(step))
 
         self.layers = math.floor((3 + math.sqrt(9 - 12 * (1 - size))) / 6)
-        extra_cells = size - (3 * self.layers ** 2 - 3 * self.layers + 1)
-
-    def get_possible_steps(self):
-        return self.possible_steps
+        #extra_cells = size - (3 * self.layers ** 2 - 3 * self.layers + 1)
 
     def in_bounds(self, position: tuple):
         for i in range(self.dimension):
@@ -120,20 +126,24 @@ class Honeycomb(Lattice):
 
     def get_neighbors(self, position: tuple, parity: bool) -> list[tuple]:
         all_neighbors = []
-        for i in range(3): #3 mogelijke stappen
-            match i:   #verschilende parities hebben verschillende opties (op parity = False [(1,0,0), (0,-1,0), (0,0,1)])
+        for i in range(self.dimension): #3 different moves
+            match i:   #Different parities have different movesets (for example, parity = False => [(1,0,0), (0,-1,0), (0,0,1)])
                 case 0:
                     index = parity
                 case 1:
                     index = 3-parity
                 case 2:
                     index = 4 + parity
+            
+            #adding tuples does not correspond to adding them as vectors. The following code solves this issue
             option = self.possible_steps[index]
-            step = []  # nodig om 1 neighbor te maken omdat optellen van tuples niet handig gaat
-            for j in range(self.dimension):  # elk j'de element van de positie en de stap bij elkaar optellen
+            step = []  
+            for j in range(self.dimension): 
                 step.append(position[j] + option[j])
             step = tuple(step)
-            if self.in_bounds(step): #als de optie in de grenzen zit, dan toevoegen
+
+            #boundary check
+            if self.in_bounds(step): 
                 all_neighbors.append(step)
         return all_neighbors
 
@@ -146,7 +156,7 @@ class Self_Avoiding_Walk:
         self.visited: set = set()  # used to store visited nodes
         self.reset(origin)
         self.temp_unavailable: set = set()
-        self.parity = False #nodig voor honeycomb om te bepalen op wat voor type node je staat
+        self.parity = False #used in honeycomb structure
 
     def reset(self, new_start: tuple):
         self.origin = new_start
@@ -165,25 +175,27 @@ class Self_Avoiding_Walk:
         # create randomness in neighbour choosing, but allow for iterative structure for the recursive backtracking
         random.shuffle(neighbors_options)
 
-        for chosen_neighbor in neighbors_options: #alle opties doorlopen voor als je vastloopt op 1 optie en je moet backtracken
+
+        for chosen_neighbor in neighbors_options: 
             self.path.append(chosen_neighbor)
             self.visited.add(chosen_neighbor)
-            self.parity = not self.parity #switch de parity als je een stap vooruit doet
+            self.parity = not self.parity #switch parity, used for hexagonal lattice
 
-            if self.walk(max_steps): #een stap vooruit nemen als het kan en anders laatste element weghalen en vanaf het laatste 'keuzepunt' de volgende optie nemen
+            if self.walk(max_steps): #recursively call the backtracking walk method
                 return True
 
+            #remove last node from path, since self.walk(max_steps) didn't return true. Then start the process over again
             self.visited.remove(chosen_neighbor)
             self.path.pop()
-            self.parity = not self.parity  # switch de parity als je een stap achteruit doet
+            self.parity = not self.parity  # switch back the parity
 
         return False
 
-    def generate(self, max_steps: int):  # the running itself for N steps
+    def generate(self, max_steps: int):  #generate a random walk of length max_steps
         self.reset(self.origin)
         if self.walk(max_steps):
             return self.path
-        return [self.origin]# return simply a path containing only the origin if no path is found
+        return [self.origin]# return simply a path containing only the origin if no path is found. Avoids error messages
 
 #
 # square = Square_Lattice(size=36, neighbors=4)
@@ -192,7 +204,7 @@ class Self_Avoiding_Walk:
 # print(len(walk.visited))
 # print(square.bounds)
 # square.visualise_R2(walk.path)
-hex = Honeycomb(1)
+hex = Honeycomb_Lattice(1)
 print(hex.possible_steps)
 walk = Self_Avoiding_Walk(lattice=hex, origin=(0, 0, 0))
 print(walk.generate(3))
